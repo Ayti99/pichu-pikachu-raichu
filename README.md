@@ -2,4 +2,4 @@
 
 My First Phaser Mini-Game
 
-[![](assets/captura.png)](https://ayti99.github.io/pichu-pikachu-raichu/)
+[![](assets/game_cover.png)](https://ayti99.github.io/pichu-pikachu-raichu/)
