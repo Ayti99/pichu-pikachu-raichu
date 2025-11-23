@@ -1,0 +1,278 @@
+<!doctype html> 
+<html lang="en"> 
+<head> 
+    <meta charset="UTF-8">
+    <title>Charizard! Get'em Pokeballs!</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.11.0/dist/phaser.js"></script>
+    <script src="game.js"></script>
+    <style type="text/css">
+        body { margin: 0; }
+    </style>
+</head>
+<body>
+
+<script type="text/javascript">
+
+    var config = {
+        type: Phaser.AUTO,
+        width: 800,
+        height: 600,
+        physics: {
+            default: 'arcade',
+            arcade: {
+                gravity: { y: 300 },
+                debug: false
+            }
+        },
+        scene: {
+            preload,
+            create,
+            update,
+        }
+    };
+
+    var player;
+    var bombs;
+    var platforms;
+    var cursors;
+
+    let isJumping = false;
+
+    new Phaser.Game(config);
+
+    function preload ()
+    {
+        //Bomb (pokeball)
+        this.load.image('bomb', 'assets/pokeball.png');
+        //Player (charizard)
+        this.load.spritesheet('charizard', 'assets/charizard.png', { frameWidth: 53 , frameHeight: 50 });
+        //Player (charizard) Jump & Falling
+        this.load.spritesheet('charizard_jump', 'assets/charizard_jump.png', { frameWidth: 50 , frameHeight: 50 });
+        //Player (charizard) Jump Left
+        this.load.spritesheet('charizard_jump_left', 'assets/charizard_jump_left.png', { frameWidth: 50 , frameHeight: 50 });
+        //Player (charizard) Jump Right
+        this.load.spritesheet('charizard_jump_right', 'assets/charizard_jump_right.png', { frameWidth: 50 , frameHeight: 50 });
+        //Background
+        this.load.image('pokemon_sky', 'assets/pokemon_sky.png');
+        //Ground & platforms
+        this.load.image('ground_2', 'assets/platform_2.png');
+        //Explosion
+        this.load.spritesheet('explosion', 'assets/explosion.png', { frameWidth: 30 , frameHeight: 28 });
+       
+    }
+
+    function create ()
+    {
+        createAnims.call(this);
+
+        this.add.image(400, 300, 'pokemon_sky');
+
+        //Platforms
+        platforms = this.physics.add.staticGroup();
+        platforms.create(400, 568, 'ground_2').setScale(2).refreshBody();
+        platforms.create(600, 400, 'ground_2');
+        platforms.create(50, 250, 'ground_2');
+        platforms.create(750, 220, 'ground_2');
+
+        //Player (charizard)
+        player = this.physics.add.sprite(100, 450, 'charizard');
+        player.setBounce(0.2);
+        player.setCollideWorldBounds(true);
+
+        this.physics.add.collider(player, platforms);
+
+        cursors = this.input.keyboard.createCursorKeys();
+
+        //Bombs (pokeball)
+        bombs = this.physics.add.group({
+            bounceX: 1,
+            bounceY: 1,
+            collideWorldBounds: true,
+            allowGravity: true
+        });
+
+        //Creating Bombs (pokeballs)
+        for (let i = 0; i < 8; i++){
+            let bomb = bombs.create(100 + i * 80, 0, 'bomb');
+            bomb.setVelocity(Phaser.Math.Between(-50, 50), Phaser.Math.Between(50, 150));
+        }
+
+        this.physics.add.collider(bombs, platforms);
+        
+        //Explosion when touching Player (charizard)
+        this.physics.add.overlap(
+            player,
+            bombs,
+            explodeBomb,
+            null,
+            this
+        );     
+    }
+
+    function update ()
+{
+    if (!cursors) return;
+
+    const onGround = player.body.blocked.down || player.body.touching.down;
+
+    if (onGround)
+    {
+        isJumping = false;
+
+        if (cursors.left.isDown)
+        {
+            player.setVelocityX(-160);
+            player.anims.play('left', true);
+        }
+        else if (cursors.right.isDown)
+        {
+            player.setVelocityX(160);
+            player.anims.play('right', true);
+        }
+        else
+        {
+            player.setVelocityX(0);
+            player.anims.play('turn');
+        }
+
+        if (cursors.up.isDown)
+        {
+            player.setVelocityY(-330);
+            isJumping = true;
+            player.anims.play('jump');
+        }
+
+        return;
+    }
+
+    //Jumping
+    if (isJumping && player.body.velocity.y < 0)
+    {
+        if (cursors.up.isDown)
+        {
+            player.setVelocityY(player.body.velocity.y - 0.5);
+        }
+        else if (player.anims.currentAnim?.key !== 'jump')
+        {
+            player.anims.play('jump', true);
+        }
+
+        //Jump leff
+        if (cursors.left.isDown)
+        {
+            player.setVelocityX(-160);
+            if (player.anims.currentAnim?.key !== 'jump_left')
+            player.anims.play('jump_left');
+        }
+
+        //Jump right
+        if (cursors.right.isDown)
+        {
+            player.setVelocityX(160);
+            if (player.anims.currentAnim?.key !== 'jump_right')
+            player.anims.play('jump_right');
+        }
+
+        //Falling
+        if (player.body.velocity.y > 0)
+        {
+            if (player.anims.currentAnim?.key !== 'falling')
+            player.anims.play('falling', true);
+        }
+    }
+    
+    return;
+    
+    //Falling
+    if (player.body.velocity.y > 0)
+    {
+        if (player.anims.currentAnim?.key !== 'falling')
+        {
+            player.anims.play('falling', true);
+        }
+    }
+}
+
+    function createAnims ()
+    {
+
+        //Player (charizard)
+        this.anims.create({
+            key: 'left',
+            frames: this.anims.generateFrameNumbers('charizard', { start: 0, end: 3 }),
+            frameRate: 10,
+            repeat: -1
+        });
+
+        this.anims.create({
+            key: 'turn',
+            frames: [ { key: 'charizard', frame: 4 } ],
+            frameRate: 20
+        });
+
+        this.anims.create({
+            key: 'right',
+            frames: this.anims.generateFrameNumbers('charizard', { start: 6, end: 9 }),
+            frameRate: 10,
+            repeat: -1
+        });
+
+        //Jump
+        this.anims.create({
+            key: 'jump',
+            frames: this.anims.generateFrameNumbers('charizard_jump', { start: 0, end: 3 }),
+            frameRate: 10,
+            repeat: 0
+        });
+
+        //Jump left
+        this.anims.create({
+            key: 'jump_left',
+            frames: this.anims.generateFrameNumbers('charizard_jump_left', { frame: 3 }),
+            frameRate: 10,
+            repeat: 0
+        });
+
+        //Jump Right
+        this.anims.create({
+            key: 'jump_right',
+            frames: this.anims.generateFrameNumbers('charizard_jump_right', { frame: 3 }),
+            frameRate: 10,
+            repeat: 0
+        });
+
+        //Falling
+        this.anims.create({
+            key: 'falling',
+            frames: this.anims.generateFrameNumbers('charizard_jump', { frame: 3 }),
+            frameRate: 10,
+            repeat: 0
+        });
+
+        //Explosion
+        this.anims.create({
+            key: 'explode',
+            frames: this.anims.generateFrameNumbers('explosion', { start: 0, end: 8 }),
+            frameRate: 15,
+            repeat: 0
+        });
+        
+    }
+
+    function explodeBomb(player, bomb){
+
+        let boom = bomb.scene.add.sprite(bomb.x, bomb.y, 'explosion');
+        boom.play('explode');
+        
+        bomb.disableBody(true, true);
+        
+        boom.on('animationcomplete', () => {
+        boom.destroy();
+    });
+
+    }
+
+</script>
+
+</body>
+</html>
