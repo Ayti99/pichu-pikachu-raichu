@@ -1,7 +1,5 @@
-#   My Phaser Mini-Game (still working on it tho)
+#   Charizard! Get'Em Pokeballs!
 
-Play: ¡Charizard! Get'em Pokeballs!
+My First Phaser Mini-Game
 
-[🎮 Play Now: ](https://ayti99.github.io/pichu-pikachu-raichu/)
-
-![Game Cover](assets/Charizard_GetEm_Pokeballs_GameCover)
+[![](assets/captura.png)](https://ayti99.github.io/pichu-pikachu-raichu/)
